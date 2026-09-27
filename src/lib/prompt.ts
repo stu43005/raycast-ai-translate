@@ -1,10 +1,14 @@
 import { getLanguage, getLanguageTitle, isChinese, LanguageConfig } from "./languages";
+import { DEFAULT_FORMALITY, DEFAULT_STYLE, styleInstructions, TranslationStyle } from "./style";
 
 export interface PromptInput {
   text: string;
   /** Already resolved source language code (never "auto") */
   sourceLang: string;
   targetLang: string;
+  style?: TranslationStyle;
+  /** Formality level id for the target language (see formalityOptions) */
+  formality?: string;
 }
 
 export interface BuiltPrompt {
@@ -77,8 +81,8 @@ function dictionaryPrompt(source: LanguageConfig, target: LanguageConfig): Promp
   };
 }
 
-function translatePrompt(text: string, source: LanguageConfig, target: LanguageConfig) {
-  const trimmed = text.trim();
+function translatePrompt(input: PromptInput, source: LanguageConfig, target: LanguageConfig) {
+  const trimmed = input.text.trim();
   // Single words get a dictionary entry; inner whitespace means it is more than one word.
   if (!/\s/.test(trimmed) && isAWord(source.code, trimmed)) {
     return { ...dictionaryPrompt(source, target), isWordMode: true };
@@ -86,9 +90,11 @@ function translatePrompt(text: string, source: LanguageConfig, target: LanguageC
   if (trimmed.length < SHORT_PHRASE_LENGTH && isChinese(target.code)) {
     return { ...shortPhrasePrompt(target), isWordMode: false };
   }
+  // Style and formality only make sense for running text, not for dictionary-style answers.
+  const style = styleInstructions(target.code, input.style ?? DEFAULT_STYLE, input.formality ?? DEFAULT_FORMALITY);
   return {
     role: "You are a skilled translator who writes natural, faithful translations.",
-    instruction: `Translate the text into ${getLanguageTitle(target.code)}.`,
+    instruction: [`Translate the text into ${getLanguageTitle(target.code)}.`, ...style].join("\n"),
     isWordMode: false,
   };
 }
@@ -97,7 +103,7 @@ function translatePrompt(text: string, source: LanguageConfig, target: LanguageC
 export function buildPrompt(input: PromptInput): BuiltPrompt {
   const source = getLanguage(input.sourceLang);
   const target = getLanguage(input.targetLang);
-  const parts = translatePrompt(input.text, source, target);
+  const parts = translatePrompt(input, source, target);
   const { role, isWordMode } = parts;
   // Target-specific writing guidance goes on its own line after the main instruction.
   const instruction = target.writingNote ? `${parts.instruction}\n${target.writingNote}` : parts.instruction;
