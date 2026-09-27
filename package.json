@@ -249,6 +249,7 @@
       "name": "useSelectedText",
       "title": "Initial Text",
       "label": "Use selected text when the command opens",
+      "description": "Prefill the source text with the text selected in the frontmost app",
       "type": "checkbox",
       "required": false,
       "default": true
