@@ -15,11 +15,17 @@ Sign in to the CLI once from a terminal before you use it here.
 ## Features
 
 - **Two-pane layout**: each row on the left is one translation. The current input is at the top, labelled `Source → Target`, and your translation history follows. The right pane shows the selected translation above its source text. The translation streams in as the CLI writes it.
-- **Translation history**: every successful translation is saved (the latest 200). If you enter exactly the same text with the same options (languages, mode, CLI, model, arguments), the saved translation is shown right away and the CLI is not called. `⌘R` forces a fresh translation. On a history row: `⌘E` loads it back into the input, `⌃D` deletes it, and `⌃⇧D` clears all history.
+- **Translation history**: every successful translation is saved (the latest 200). If you enter exactly the same text with the same options (languages, style, formality, CLI, model, arguments), the saved translation is shown right away and the CLI is not called. `⌘R` forces a fresh translation. On a history row: `⌘E` loads it back into the input, `⌃D` deletes it, and `⌃⇧D` clears all history.
 - **Language selection**: pick the target language from the search bar dropdown (or press `⌘L`). Pick the source language with `⌘⇧L`, where Auto Detect is the default. Swap the two with `⌘⇧X`.
 - **Auto-switching target**: when auto-detected text is already in the target language (for example Chinese text with a Chinese target), it is translated to the _Second Target Language_ instead, like Raycast's built-in Translate.
+- **Translation style** (`⌘⇧N`): _Natural_ (idiomatic) or _Literal_ (close to the original wording).
+- **Formality** (`⌘⇧F`), remembered per target language:
+  - most languages: Standard (keep the original's register), Formal or Informal
+  - Chinese: Standard, Formal (您) or Informal (你)
+  - Japanese: Standard, Sonkeigo (尊敬語), Kenjōgo (謙譲語), Teineigo (丁寧語), Bikago (美化語) or Informal (タメ口)
+  - Korean: Standard, Formal (존댓말) or Informal (반말)
+- **Taiwanese Hokkien (臺灣話) and Hakka (客家話)**: written in Han characters following the Taiwan Ministry of Education's recommended characters. Cantonese is written as colloquial written Cantonese.
 - **Dictionary mode**: a single word gets a dictionary-style answer with phonetics, senses, example sentences and etymology.
-- **Modes** (`⌘⇧M`): Translate, Polish, Summarize, Analyze Grammar and Explain Code.
 - **Switch CLI on the fly** (`⌘⇧P`), retranslate with `⌘R`, copy with `⏎` and paste with `⌘⏎`.
 - The selected text in the frontmost app is used as the initial input. You can also pass text as the command argument or as fallback text.
 
@@ -45,7 +51,7 @@ Sign in to the CLI once from a terminal before you use it here.
 
 ## Credits
 
-Features such as dictionary mode and the Polish, Summarize, Analyze Grammar and Explain Code modes are inspired by [nextai-translator](https://github.com/nextai-translator/nextai-translator). The prompts in this extension are written from scratch. The UI takes ideas from the [iTranslate](https://github.com/raycast/extensions/tree/main/extensions/itranslate) and Google Translate Raycast extensions.
+Dictionary mode and the short-phrase alternatives are inspired by [nextai-translator](https://github.com/nextai-translator/nextai-translator). The prompts in this extension are written from scratch. The UI takes ideas from the [iTranslate](https://github.com/raycast/extensions/tree/main/extensions/itranslate) and Google Translate Raycast extensions.
 
 ## Development
 
