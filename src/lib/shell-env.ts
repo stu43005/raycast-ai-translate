@@ -1,5 +1,5 @@
 import { execFile } from "child_process";
-import { homedir } from "os";
+import { homedir, userInfo } from "os";
 
 const PATH_MARKER = "__AI_CLI_TRANSLATE_PATH__";
 
@@ -56,12 +56,19 @@ function readLoginShellPath(): Promise<string | undefined> {
   });
 }
 
-/** Environment for spawning CLIs: Raycast starts extensions with a minimal PATH, so borrow the login shell's. */
+/**
+ * Environment for spawning CLIs. Raycast starts extensions with a minimal PATH and without USER / LOGNAME;
+ * borrow the login shell's PATH and restore the user name, which e.g. Claude Code needs to find its
+ * credentials in the macOS keychain (otherwise it reports "Not logged in").
+ */
 export async function getCliEnv(): Promise<NodeJS.ProcessEnv> {
   cachedShellPath ??= readLoginShellPath();
   const shellPath = await cachedShellPath;
+  const username = process.env.USER || process.env.LOGNAME || userInfo().username;
   return {
     ...process.env,
+    USER: username,
+    LOGNAME: process.env.LOGNAME || username,
     PATH: mergePathLists(shellPath, process.env.PATH, fallbackPathDirs().join(":")),
     NO_COLOR: "1",
   };
