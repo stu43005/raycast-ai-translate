@@ -137,6 +137,18 @@
           "value": "zh-Hans"
         },
         {
+          "title": "粵語 (Cantonese)",
+          "value": "yue"
+        },
+        {
+          "title": "臺灣話 (Taiwanese Hokkien)",
+          "value": "nan"
+        },
+        {
+          "title": "客家話 (Hakka)",
+          "value": "hak"
+        },
+        {
           "title": "English",
           "value": "en"
         },
