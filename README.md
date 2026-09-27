@@ -14,7 +14,8 @@ Sign in to the CLI once from a terminal before you use it here.
 
 ## Features
 
-- **Two-pane layout**: the source text is on the left, labelled with its (detected) language. The translation streams into the right pane as the CLI writes it.
+- **Two-pane layout**: each row on the left is one translation. The current input is at the top, labelled `Source → Target`, and your translation history follows. The right pane shows the selected translation above its source text. The translation streams in as the CLI writes it.
+- **Translation history**: every successful translation is saved (the latest 200). If you enter exactly the same text with the same options (languages, mode, CLI, model, arguments), the saved translation is shown right away and the CLI is not called. `⌘R` forces a fresh translation. On a history row: `⌘E` loads it back into the input, `⌃D` deletes it, and `⌃⇧D` clears all history.
 - **Language selection**: pick the target language from the search bar dropdown (or press `⌘L`). Pick the source language with `⌘⇧L`, where Auto Detect is the default. Swap the two with `⌘⇧X`.
 - **Auto-switching target**: when auto-detected text is already in the target language (for example Chinese text with a Chinese target), it is translated to the _Second Target Language_ instead, like Raycast's built-in Translate.
 - **Dictionary mode**: a single word gets a dictionary-style answer with phonetics, senses, example sentences and etymology.
