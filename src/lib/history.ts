@@ -1,4 +1,3 @@
-import { TranslateMode } from "./prompt";
 import { ProviderId, ProviderOptions } from "./providers";
 
 export const MAX_HISTORY_ENTRIES = 200;
@@ -9,7 +8,6 @@ export interface TranslationRequest {
   /** Resolved source language (never "auto") */
   source: string;
   target: string;
-  mode: TranslateMode;
   provider: ProviderId;
   options: ProviderOptions;
 }
@@ -19,7 +17,6 @@ export interface HistoryEntry {
   text: string;
   source: string;
   target: string;
-  mode: TranslateMode;
   provider: ProviderId;
   model?: string;
   result: string;
@@ -39,7 +36,6 @@ export function requestKey(request: TranslationRequest): string {
     request.text.trim(),
     request.source,
     request.target,
-    request.mode,
     request.provider,
     Object.fromEntries(options),
   ]);

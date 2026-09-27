@@ -5,7 +5,6 @@ const base: LanguageSelection = {
   source: "auto",
   target: "zh-Hant",
   secondTarget: "en",
-  mode: "translate",
 };
 
 describe("resolveLanguages", () => {
@@ -56,11 +55,6 @@ describe("resolveLanguages", () => {
     const resolved = resolveLanguages({ ...base, text: "今天天氣很好", source: "zh-Hans" });
     expect(resolved.target).toBe("zh-Hant");
     expect(resolved.targetSwitched).toBe(false);
-  });
-
-  it("does not switch the target outside translate mode", () => {
-    const resolved = resolveLanguages({ ...base, text: "今天天氣很好，我們去散步。", mode: "summarize" });
-    expect(resolved.target).toBe("zh-Hant");
   });
 
   it("falls back to another language when the second target is also the source language", () => {

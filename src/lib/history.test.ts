@@ -4,7 +4,6 @@ const request: TranslationRequest = {
   text: "Good morning",
   source: "en",
   target: "zh-Hant",
-  mode: "translate",
   provider: "claude",
   options: { model: "haiku", shell: "/bin/zsh" },
 };
@@ -15,7 +14,6 @@ function entry(key: string, overrides: Partial<HistoryEntry> = {}): HistoryEntry
     text: key,
     source: "en",
     target: "zh-Hant",
-    mode: "translate",
     provider: "claude",
     result: `result of ${key}`,
     isWordMode: false,
@@ -49,7 +47,6 @@ describe("requestKey", () => {
     expect(requestKey({ ...request, text: "Good morning!" })).not.toBe(base);
     expect(requestKey({ ...request, source: "fr" })).not.toBe(base);
     expect(requestKey({ ...request, target: "ja" })).not.toBe(base);
-    expect(requestKey({ ...request, mode: "summarize" })).not.toBe(base);
     expect(requestKey({ ...request, provider: "codex" })).not.toBe(base);
     expect(requestKey({ ...request, options: { ...request.options, model: "sonnet" } })).not.toBe(base);
     expect(requestKey({ ...request, options: { ...request.options, extraArgs: "--effort low" } })).not.toBe(base);

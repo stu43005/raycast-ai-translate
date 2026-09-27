@@ -1,6 +1,5 @@
 import { detectLanguage } from "./detect";
 import { AUTO_DETECT } from "./languages";
-import { TranslateMode } from "./prompt";
 
 export interface LanguageSelection {
   text: string;
@@ -9,7 +8,6 @@ export interface LanguageSelection {
   target: string;
   /** Used instead of `target` when the detected source is already in the target language */
   secondTarget: string;
-  mode: TranslateMode;
 }
 
 export interface ResolvedLanguages {
@@ -31,14 +29,14 @@ function sameFamily(a: string, b: string): boolean {
 
 /** Resolves the concrete source/target languages for a request. */
 export function resolveLanguages(selection: LanguageSelection): ResolvedLanguages {
-  const { text, target, secondTarget, mode } = selection;
+  const { text, target, secondTarget } = selection;
   const sourceDetected = selection.source === AUTO_DETECT;
   const source = sourceDetected
     ? detectLanguage(text, { ambiguousChinese: target === "zh-Hans" ? "zh-Hans" : "zh-Hant" })
     : selection.source;
 
   // Like Raycast's built-in Translate: typing in the target language translates the other way.
-  if (sourceDetected && mode === "translate" && sameFamily(source, target)) {
+  if (sourceDetected && sameFamily(source, target)) {
     const fallback = sameFamily(source, secondTarget) ? (sameFamily(source, "en") ? "zh-Hant" : "en") : secondTarget;
     return { source, target: fallback, sourceDetected, targetSwitched: true };
   }

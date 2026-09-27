@@ -19,7 +19,6 @@ import { findEntry, HistoryEntry, removeEntry, upsertEntry } from "./lib/history
 import { AUTO_DETECT, getLanguageTitle, SOURCE_LANGUAGES, TARGET_LANGUAGES } from "./lib/languages";
 import { toLiteralMarkdown } from "./lib/layout";
 import { getDebounceMs, getModel, getPreferences, getProviderOptions, getTimeoutMs } from "./lib/preferences";
-import { TRANSLATE_MODES, TranslateMode } from "./lib/prompt";
 import { getProvider, ProviderId, PROVIDERS } from "./lib/providers";
 import { resolveLanguages } from "./lib/resolve";
 import { CliNotFoundError } from "./lib/runner";
@@ -27,16 +26,9 @@ import { CliNotFoundError } from "./lib/runner";
 const HISTORY_CACHE_KEY = "translation-history";
 const CURRENT_ITEM_ID = "current";
 
-/** Modes whose output is Markdown by design; other results are rendered literally. */
-const MARKDOWN_MODES: TranslateMode[] = ["analyze", "explain-code"];
-
 function providerLabel(provider: ProviderId, model?: string): string {
   const title = getProvider(provider).title;
   return model?.trim() ? `${title} (${model.trim()})` : title;
-}
-
-function modeTitle(mode: TranslateMode): string {
-  return TRANSLATE_MODES.find((item) => item.id === mode)?.title ?? mode;
 }
 
 function singleLine(text: string): string {
@@ -60,12 +52,11 @@ function errorMarkdown(error: Error, provider: ProviderId): string {
 }
 
 /** Translation on top, source text below a separator. */
-function recordMarkdown(result: string, source: string, mode: TranslateMode): string {
-  const translation = MARKDOWN_MODES.includes(mode) ? result : toLiteralMarkdown(result);
-  return `${translation}\n\n---\n\n${toLiteralMarkdown(source)}`;
+function recordMarkdown(result: string, source: string): string {
+  return `${toLiteralMarkdown(result)}\n\n---\n\n${toLiteralMarkdown(source)}`;
 }
 
-function currentMarkdown(state: TranslationState, text: string, provider: ProviderId, mode: TranslateMode): string {
+function currentMarkdown(state: TranslationState, text: string, provider: ProviderId): string {
   if (state.error) {
     return errorMarkdown(state.error, provider);
   }
@@ -73,7 +64,7 @@ function currentMarkdown(state: TranslationState, text: string, provider: Provid
     const placeholder = state.isLoading ? "_Translating…_" : "_Press ⏎ to translate._";
     return `${placeholder}\n\n---\n\n${toLiteralMarkdown(text)}`;
   }
-  return recordMarkdown(state.text, text, mode);
+  return recordMarkdown(state.text, text);
 }
 
 export default function Command(props: LaunchProps<{ arguments: { text?: string } }>) {
@@ -83,7 +74,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
   const [text, setText] = useState(initialText);
   const [sourceLang, setSourceLang] = useCachedState("source-language", AUTO_DETECT);
   const [targetLang, setTargetLang] = useCachedState("target-language", preferences.defaultTargetLanguage || "zh-Hant");
-  const [mode, setMode] = useCachedState<TranslateMode>("mode", "translate");
   const [provider, setProvider] = useState<ProviderId>(preferences.provider || "claude");
   const [history, setHistory] = useCachedState<HistoryEntry[]>(HISTORY_CACHE_KEY, []);
   const [selectedId, setSelectedId] = useState<string | undefined>(initialText ? CURRENT_ITEM_ID : undefined);
@@ -110,7 +100,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
     source: sourceLang,
     target: targetLang,
     secondTarget: preferences.secondTargetLanguage || "en",
-    mode,
   });
   const model = getModel(preferences, provider);
   const translation = useTranslation(
@@ -118,7 +107,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
       text,
       source: resolved.source,
       target: resolved.target,
-      mode,
       provider,
       options: getProviderOptions(preferences, provider),
     },
@@ -138,7 +126,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
             text: request.text.trim(),
             source: request.source,
             target: request.target,
-            mode: request.mode,
             provider: request.provider,
             model: request.options.model?.trim() || undefined,
             result: result.text,
@@ -169,7 +156,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
   const loadEntry = (entry: HistoryEntry) => {
     setSourceLang(entry.source);
     setTargetLang(entry.target);
-    setMode(entry.mode);
     setProvider(entry.provider);
     changeText(entry.text);
   };
@@ -224,16 +210,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
         </ActionPanel.Submenu>
       </ActionPanel.Section>
       <ActionPanel.Section title="Engine">
-        <ActionPanel.Submenu title="Change Mode" icon={Icon.Wand} shortcut={{ modifiers: ["cmd", "shift"], key: "m" }}>
-          {TRANSLATE_MODES.map((item) => (
-            <Action
-              key={item.id}
-              title={item.title}
-              icon={item.id === mode ? Icon.CheckCircle : Icon.Circle}
-              onAction={() => setMode(item.id)}
-            />
-          ))}
-        </ActionPanel.Submenu>
         <ActionPanel.Submenu
           title="Change AI CLI"
           icon={Icon.Terminal}
@@ -332,7 +308,7 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
   const currentDetail = (
     <List.Item.Detail
       isLoading={translation.isLoading}
-      markdown={currentMarkdown(translation, text, provider, mode)}
+      markdown={currentMarkdown(translation, text, provider)}
       metadata={
         <List.Item.Detail.Metadata>
           <List.Item.Detail.Metadata.Label title="Source" text={sourceTitle} />
@@ -341,7 +317,6 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
             text={resolved.targetSwitched ? `${targetTitle} (switched from source)` : targetTitle}
             icon={Icon.Globe}
           />
-          <List.Item.Detail.Metadata.Label title="Mode" text={modeTitle(mode)} />
           <List.Item.Detail.Metadata.Label title="Engine" text={providerLabel(provider, model)} icon={Icon.Terminal} />
           {result && translation.elapsedMs !== undefined ? (
             <List.Item.Detail.Metadata.Label
@@ -363,12 +338,11 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
 
   const historyDetail = (entry: HistoryEntry) => (
     <List.Item.Detail
-      markdown={recordMarkdown(entry.result, entry.text, entry.mode)}
+      markdown={recordMarkdown(entry.result, entry.text)}
       metadata={
         <List.Item.Detail.Metadata>
           <List.Item.Detail.Metadata.Label title="Source" text={getLanguageTitle(entry.source)} />
           <List.Item.Detail.Metadata.Label title="Target" text={getLanguageTitle(entry.target)} icon={Icon.Globe} />
-          <List.Item.Detail.Metadata.Label title="Mode" text={modeTitle(entry.mode)} />
           <List.Item.Detail.Metadata.Label
             title="Engine"
             text={providerLabel(entry.provider, entry.model)}
