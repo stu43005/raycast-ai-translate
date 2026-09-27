@@ -8,6 +8,10 @@ export interface LanguageConfig {
   nameEn: string;
   /** Transcription system used in dictionary-style answers, `false` when not applicable */
   phoneticNotation: string | false;
+  /** Extra search keywords for the language picker */
+  aliases?: string[];
+  /** Extra instruction appended to prompts when this language is the target */
+  writingNote?: string;
   isSource: boolean;
   isTarget: boolean;
 }
@@ -41,7 +45,33 @@ export const LANGUAGES: LanguageConfig[] = [
   }),
   defineLanguage({ code: "zh-Hant", name: "繁體中文", nameEn: "Traditional Chinese", phoneticNotation: "Bopomofo" }),
   defineLanguage({ code: "zh-Hans", name: "简体中文", nameEn: "Simplified Chinese", phoneticNotation: "Pinyin" }),
-  defineLanguage({ code: "yue", name: "粵語", nameEn: "Cantonese", phoneticNotation: "Jyutping", isSource: false }),
+  defineLanguage({
+    code: "yue",
+    name: "粵語",
+    nameEn: "Cantonese",
+    phoneticNotation: "Jyutping",
+    writingNote:
+      "Write colloquial written Cantonese in Traditional Chinese characters (for example 係, 唔, 嘅, 咗) rather than Standard Written Chinese.",
+    isSource: false,
+  }),
+  defineLanguage({
+    code: "nan",
+    name: "臺灣話",
+    nameEn: "Taiwanese Hokkien",
+    phoneticNotation: "Tâi-lô",
+    aliases: ["閩南語", "台語", "臺語", "Hokkien", "Taiwanese"],
+    writingNote:
+      "Write Taiwanese Hokkien in Han characters following the Taiwan Ministry of Education's recommended characters (臺灣台語推薦用字), using Taiwanese vocabulary and grammar rather than Mandarin wording.",
+  }),
+  defineLanguage({
+    code: "hak",
+    name: "客家話",
+    nameEn: "Hakka",
+    phoneticNotation: "Taiwanese Hakka Pinyin",
+    aliases: ["客語", "客家語"],
+    writingNote:
+      "Write Taiwanese Hakka (Sixian dialect unless the text suggests another) in Han characters following the Taiwan Ministry of Education's recommended characters (臺灣客家語書寫推薦用字), using Hakka vocabulary and grammar rather than Mandarin wording.",
+  }),
   defineLanguage({ code: "ja", name: "日本語", nameEn: "Japanese", phoneticNotation: "hiragana" }),
   defineLanguage({ code: "ko", name: "한국어", nameEn: "Korean", phoneticNotation: "Revised Romanization" }),
   defineLanguage({ code: "fr", name: "Français", nameEn: "French", phoneticNotation: "IPA" }),
@@ -81,7 +111,7 @@ export const SOURCE_LANGUAGES = LANGUAGES.filter((language) => language.isSource
 export const TARGET_LANGUAGES = LANGUAGES.filter((language) => language.isTarget);
 
 /** Codes whose output is some form of Chinese; used to pick Chinese-specific prompts. */
-export const CHINESE_CODES = ["zh-Hans", "zh-Hant", "yue"];
+export const CHINESE_CODES = ["zh-Hans", "zh-Hant", "yue", "nan", "hak"];
 
 export function isChinese(code: string): boolean {
   return CHINESE_CODES.includes(code);

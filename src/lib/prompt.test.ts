@@ -107,6 +107,46 @@ describe("buildPrompt: translate", () => {
     expect(result.system).not.toContain("false");
   });
 
+  it("appends the target language's writing note to a sentence translation", () => {
+    const result = buildPrompt({ text: "Hello, how are you today?", sourceLang: "en", targetLang: "nan" });
+    expect(result.isWordMode).toBe(false);
+    expect(result.user).toBe(
+      [
+        "Translate the text into Taiwanese Hokkien (臺灣話).",
+        "Write Taiwanese Hokkien in Han characters following the Taiwan Ministry of Education's recommended characters (臺灣台語推薦用字), using Taiwanese vocabulary and grammar rather than Mandarin wording.",
+        "",
+        "<text>",
+        "Hello, how are you today?",
+        "</text>",
+      ].join("\n"),
+    );
+  });
+
+  it("appends the target language's writing note to a dictionary entry", () => {
+    const result = buildPrompt({ text: "hello", sourceLang: "en", targetLang: "hak" });
+    expect(result.isWordMode).toBe(true);
+    expect(result.user).toContain(
+      "\nOrigin: <short etymology>\nWrite Taiwanese Hakka (Sixian dialect unless the text suggests another) in Han characters following the Taiwan Ministry of Education's recommended characters (臺灣客家語書寫推薦用字), using Hakka vocabulary and grammar rather than Mandarin wording.\n\n<text>\n",
+    );
+  });
+
+  it("appends the target language's writing note to short-phrase renderings", () => {
+    const result = buildPrompt({ text: "猫と犬", sourceLang: "ja", targetLang: "yue" });
+    expect(result.isWordMode).toBe(false);
+    expect(result.system).toContain("lexicographer");
+    expect(result.user).toContain(
+      "\nWrite the usage notes in Cantonese (粵語).\nWrite colloquial written Cantonese in Traditional Chinese characters (for example 係, 唔, 嘅, 咗) rather than Standard Written Chinese.\n\n<text>\n",
+    );
+  });
+
+  it("adds no writing note for a target language without one", () => {
+    for (const text of ["some text here", "hello", "猫と犬"]) {
+      const { user } = buildPrompt({ text, sourceLang: "en", targetLang: "zh-Hant" });
+      expect(user).not.toContain("Write colloquial");
+      expect(user).not.toContain("Ministry of Education");
+    }
+  });
+
   it("does not use word mode when the text contains inner whitespace", () => {
     const result = buildPrompt({ text: "ice\tcream", sourceLang: "en", targetLang: "fr" });
     expect(result.isWordMode).toBe(false);

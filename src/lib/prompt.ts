@@ -97,7 +97,10 @@ function translatePrompt(text: string, source: LanguageConfig, target: LanguageC
 export function buildPrompt(input: PromptInput): BuiltPrompt {
   const source = getLanguage(input.sourceLang);
   const target = getLanguage(input.targetLang);
-  const { role, instruction, isWordMode } = translatePrompt(input.text, source, target);
+  const parts = translatePrompt(input.text, source, target);
+  const { role, isWordMode } = parts;
+  // Target-specific writing guidance goes on its own line after the main instruction.
+  const instruction = target.writingNote ? `${parts.instruction}\n${target.writingNote}` : parts.instruction;
 
   const content = input.text.trim();
   return {
