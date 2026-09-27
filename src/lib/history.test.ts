@@ -4,6 +4,8 @@ const request: TranslationRequest = {
   text: "Good morning",
   source: "en",
   target: "zh-Hant",
+  style: "natural",
+  formality: "standard",
   provider: "claude",
   options: { model: "haiku", shell: "/bin/zsh" },
 };
@@ -47,6 +49,8 @@ describe("requestKey", () => {
     expect(requestKey({ ...request, text: "Good morning!" })).not.toBe(base);
     expect(requestKey({ ...request, source: "fr" })).not.toBe(base);
     expect(requestKey({ ...request, target: "ja" })).not.toBe(base);
+    expect(requestKey({ ...request, style: "literal" })).not.toBe(base);
+    expect(requestKey({ ...request, formality: "formal" })).not.toBe(base);
     expect(requestKey({ ...request, provider: "codex" })).not.toBe(base);
     expect(requestKey({ ...request, options: { ...request.options, model: "sonnet" } })).not.toBe(base);
     expect(requestKey({ ...request, options: { ...request.options, extraArgs: "--effort low" } })).not.toBe(base);

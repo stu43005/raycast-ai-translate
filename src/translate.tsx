@@ -22,6 +22,7 @@ import { getDebounceMs, getModel, getPreferences, getProviderOptions, getTimeout
 import { getProvider, ProviderId, PROVIDERS } from "./lib/providers";
 import { resolveLanguages } from "./lib/resolve";
 import { CliNotFoundError } from "./lib/runner";
+import { DEFAULT_STYLE, formalityOptions, normalizeFormality, TRANSLATION_STYLES, TranslationStyle } from "./lib/style";
 
 const HISTORY_CACHE_KEY = "translation-history";
 const CURRENT_ITEM_ID = "current";
@@ -29,6 +30,14 @@ const CURRENT_ITEM_ID = "current";
 function providerLabel(provider: ProviderId, model?: string): string {
   const title = getProvider(provider).title;
   return model?.trim() ? `${title} (${model.trim()})` : title;
+}
+
+function styleTitle(style: TranslationStyle): string {
+  return TRANSLATION_STYLES.find((option) => option.id === style)?.title ?? style;
+}
+
+function formalityTitle(target: string, formality: string): string {
+  return formalityOptions(target).find((option) => option.id === formality)?.title ?? formality;
 }
 
 function singleLine(text: string): string {
@@ -75,6 +84,9 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
   const [sourceLang, setSourceLang] = useCachedState("source-language", AUTO_DETECT);
   const [targetLang, setTargetLang] = useCachedState("target-language", preferences.defaultTargetLanguage || "zh-Hant");
   const [provider, setProvider] = useState<ProviderId>(preferences.provider || "claude");
+  const [style, setStyle] = useCachedState<TranslationStyle>("translation-style", DEFAULT_STYLE);
+  // Formality levels differ per language (e.g. Japanese keigo), so the choice is remembered per target.
+  const [formalityByTarget, setFormalityByTarget] = useCachedState<Record<string, string>>("formality-by-target", {});
   const [history, setHistory] = useCachedState<HistoryEntry[]>(HISTORY_CACHE_KEY, []);
   const [selectedId, setSelectedId] = useState<string | undefined>(initialText ? CURRENT_ITEM_ID : undefined);
   const userTyped = useRef(initialText.length > 0);
@@ -101,12 +113,16 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
     target: targetLang,
     secondTarget: preferences.secondTargetLanguage || "en",
   });
+  const formality = normalizeFormality(resolved.target, formalityByTarget[resolved.target]);
+  const setFormality = (id: string) => setFormalityByTarget((previous) => ({ ...previous, [resolved.target]: id }));
   const model = getModel(preferences, provider);
   const translation = useTranslation(
     {
       text,
       source: resolved.source,
       target: resolved.target,
+      style,
+      formality,
       provider,
       options: getProviderOptions(preferences, provider),
     },
@@ -126,6 +142,8 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
             text: request.text.trim(),
             source: request.source,
             target: request.target,
+            style: request.style,
+            formality: request.formality,
             provider: request.provider,
             model: request.options.model?.trim() || undefined,
             result: result.text,
@@ -157,6 +175,9 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
     setSourceLang(entry.source);
     setTargetLang(entry.target);
     setProvider(entry.provider);
+    if (entry.style) setStyle(entry.style);
+    const entryFormality = entry.formality;
+    if (entryFormality) setFormalityByTarget((previous) => ({ ...previous, [entry.target]: entryFormality }));
     changeText(entry.text);
   };
 
@@ -205,6 +226,36 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
               title={getLanguageTitle(language.code)}
               icon={language.code === targetLang ? Icon.CheckCircle : Icon.Circle}
               onAction={() => setTargetLang(language.code)}
+            />
+          ))}
+        </ActionPanel.Submenu>
+      </ActionPanel.Section>
+      <ActionPanel.Section title="Style">
+        <ActionPanel.Submenu
+          title="Change Translation Style"
+          icon={Icon.Wand}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
+        >
+          {TRANSLATION_STYLES.map((option) => (
+            <Action
+              key={option.id}
+              title={option.title}
+              icon={option.id === style ? Icon.CheckCircle : Icon.Circle}
+              onAction={() => setStyle(option.id)}
+            />
+          ))}
+        </ActionPanel.Submenu>
+        <ActionPanel.Submenu
+          title="Change Formality"
+          icon={Icon.Person}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+        >
+          {formalityOptions(resolved.target).map((option) => (
+            <Action
+              key={option.id}
+              title={option.title}
+              icon={option.id === formality ? Icon.CheckCircle : Icon.Circle}
+              onAction={() => setFormality(option.id)}
             />
           ))}
         </ActionPanel.Submenu>
@@ -317,6 +368,8 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
             text={resolved.targetSwitched ? `${targetTitle} (switched from source)` : targetTitle}
             icon={Icon.Globe}
           />
+          <List.Item.Detail.Metadata.Label title="Style" text={styleTitle(style)} />
+          <List.Item.Detail.Metadata.Label title="Formality" text={formalityTitle(resolved.target, formality)} />
           <List.Item.Detail.Metadata.Label title="Engine" text={providerLabel(provider, model)} icon={Icon.Terminal} />
           {result && translation.elapsedMs !== undefined ? (
             <List.Item.Detail.Metadata.Label
@@ -343,6 +396,10 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
         <List.Item.Detail.Metadata>
           <List.Item.Detail.Metadata.Label title="Source" text={getLanguageTitle(entry.source)} />
           <List.Item.Detail.Metadata.Label title="Target" text={getLanguageTitle(entry.target)} icon={Icon.Globe} />
+          {entry.style ? <List.Item.Detail.Metadata.Label title="Style" text={styleTitle(entry.style)} /> : null}
+          {entry.formality ? (
+            <List.Item.Detail.Metadata.Label title="Formality" text={formalityTitle(entry.target, entry.formality)} />
+          ) : null}
           <List.Item.Detail.Metadata.Label
             title="Engine"
             text={providerLabel(entry.provider, entry.model)}
@@ -378,7 +435,7 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
                 key={language.code}
                 value={language.code}
                 title={getLanguageTitle(language.code)}
-                keywords={[language.code, language.name, language.nameEn]}
+                keywords={[language.code, language.name, language.nameEn, ...(language.aliases ?? [])]}
               />
             ))}
           </List.Dropdown.Section>
@@ -393,7 +450,10 @@ export default function Command(props: LaunchProps<{ arguments: { text?: string 
         actions={currentActions}
       />
       {hasText ? (
-        <List.Section title={`${sourceTitle} → ${targetTitle}`}>
+        <List.Section
+          title={`${sourceTitle} → ${targetTitle}`}
+          subtitle={`${styleTitle(style)} · ${formalityTitle(resolved.target, formality)}`}
+        >
           <List.Item
             id={CURRENT_ITEM_ID}
             icon={currentIcon}

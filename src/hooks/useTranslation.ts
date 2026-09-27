@@ -92,6 +92,8 @@ export function useTranslation(request: TranslationRequest, options: UseTranslat
             text: request.text.trim(),
             sourceLang: request.source,
             targetLang: request.target,
+            style: request.style,
+            formality: request.formality,
           });
           const invocation = buildInvocation(request.provider, prompt, request.options);
           const env = await getCliEnv();

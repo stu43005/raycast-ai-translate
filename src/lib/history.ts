@@ -1,4 +1,5 @@
 import { ProviderId, ProviderOptions } from "./providers";
+import { TranslationStyle } from "./style";
 
 export const MAX_HISTORY_ENTRIES = 200;
 
@@ -8,6 +9,9 @@ export interface TranslationRequest {
   /** Resolved source language (never "auto") */
   source: string;
   target: string;
+  style: TranslationStyle;
+  /** Formality level id, already normalized for the target language */
+  formality: string;
   provider: ProviderId;
   options: ProviderOptions;
 }
@@ -17,6 +21,9 @@ export interface HistoryEntry {
   text: string;
   source: string;
   target: string;
+  /** Missing on entries saved before styles existed */
+  style?: TranslationStyle;
+  formality?: string;
   provider: ProviderId;
   model?: string;
   result: string;
@@ -36,6 +43,8 @@ export function requestKey(request: TranslationRequest): string {
     request.text.trim(),
     request.source,
     request.target,
+    request.style,
+    request.formality,
     request.provider,
     Object.fromEntries(options),
   ]);
