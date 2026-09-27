@@ -35,25 +35,6 @@ describe("buildPrompt: translate", () => {
     });
   });
 
-  it("uses the target language's own instruction for ko-banmal", () => {
-    const result = buildPrompt({
-      text: "Good morning, everyone.",
-      sourceLang: "en",
-      targetLang: "ko-banmal",
-    });
-    expect(result.user).toBe(
-      "Translate the text from English into casual Korean (반말). Use plain, non-honorific speech endings throughout (for example -다, -아/-어, -야) and never polite or formal endings such as -요 or -습니다.\n\n<text>\nGood morning, everyone.\n</text>",
-    );
-    expect(result.isWordMode).toBe(false);
-  });
-
-  it("uses the target language's role for contemporary Chinese", () => {
-    const result = buildPrompt({ text: "Hello there.", sourceLang: "en", targetLang: "xdbhw" });
-    expect(result.system).toBe(
-      `You are a scholar of the Chinese language who writes clear, contemporary vernacular Chinese.\n\n${GUARD}`,
-    );
-  });
-
   it("does not use word mode for a multi-word sentence", () => {
     const result = buildPrompt({ text: "hello world", sourceLang: "en", targetLang: "zh-Hant" });
     expect(result.isWordMode).toBe(false);

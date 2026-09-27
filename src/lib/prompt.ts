@@ -86,7 +86,11 @@ function translatePrompt(text: string, source: LanguageConfig, target: LanguageC
   if (trimmed.length < SHORT_PHRASE_LENGTH && isChinese(target.code)) {
     return { ...shortPhrasePrompt(target), isWordMode: false };
   }
-  return { role: target.rolePrompt, instruction: target.genCommandPrompt(source), isWordMode: false };
+  return {
+    role: "You are a skilled translator who writes natural, faithful translations.",
+    instruction: `Translate the text into ${getLanguageTitle(target.code)}.`,
+    isWordMode: false,
+  };
 }
 
 /** Builds the system and user prompts for a request. */

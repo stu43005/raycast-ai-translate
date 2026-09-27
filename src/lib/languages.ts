@@ -10,29 +10,17 @@ export interface LanguageConfig {
   phoneticNotation: string | false;
   isSource: boolean;
   isTarget: boolean;
-  rolePrompt: string;
-  genCommandPrompt: (source: LanguageConfig) => string;
 }
 
 type LanguageSeed = Pick<LanguageConfig, "code" | "name" | "nameEn"> &
   Partial<Omit<LanguageConfig, "code" | "name" | "nameEn">>;
-
-const DEFAULT_ROLE_PROMPT = "You are a skilled translator who writes natural, faithful translations.";
 
 function languageLabel(config: Pick<LanguageConfig, "name" | "nameEn">): string {
   return config.name === config.nameEn ? config.nameEn : `${config.nameEn} (${config.name})`;
 }
 
 function defineLanguage(seed: LanguageSeed): LanguageConfig {
-  const config: LanguageConfig = {
-    phoneticNotation: "transcription",
-    isSource: true,
-    isTarget: true,
-    rolePrompt: DEFAULT_ROLE_PROMPT,
-    genCommandPrompt: () => `Translate the text into ${languageLabel(config)}.`,
-    ...seed,
-  };
-  return config;
+  return { phoneticNotation: "transcription", isSource: true, isTarget: true, ...seed };
 }
 
 export const LANGUAGES: LanguageConfig[] = [
@@ -54,26 +42,8 @@ export const LANGUAGES: LanguageConfig[] = [
   defineLanguage({ code: "zh-Hant", name: "繁體中文", nameEn: "Traditional Chinese", phoneticNotation: "Bopomofo" }),
   defineLanguage({ code: "zh-Hans", name: "简体中文", nameEn: "Simplified Chinese", phoneticNotation: "Pinyin" }),
   defineLanguage({ code: "yue", name: "粵語", nameEn: "Cantonese", phoneticNotation: "Jyutping", isSource: false }),
-  defineLanguage({ code: "lzh", name: "文言文", nameEn: "Classical Chinese", phoneticNotation: "Pinyin" }),
-  defineLanguage({
-    code: "xdbhw",
-    name: "现代白话文",
-    nameEn: "Contemporary Chinese",
-    phoneticNotation: "Hanyu Pinyin",
-    rolePrompt: "You are a scholar of the Chinese language who writes clear, contemporary vernacular Chinese.",
-    isSource: false,
-  }),
   defineLanguage({ code: "ja", name: "日本語", nameEn: "Japanese", phoneticNotation: "hiragana" }),
   defineLanguage({ code: "ko", name: "한국어", nameEn: "Korean", phoneticNotation: "Revised Romanization" }),
-  defineLanguage({
-    code: "ko-banmal",
-    name: "한국어 반말",
-    nameEn: "Korean (banmal)",
-    phoneticNotation: "Revised Romanization",
-    isSource: false,
-    genCommandPrompt: (source) =>
-      `Translate the text from ${source.nameEn} into casual Korean (반말). Use plain, non-honorific speech endings throughout (for example -다, -아/-어, -야) and never polite or formal endings such as -요 or -습니다.`,
-  }),
   defineLanguage({ code: "fr", name: "Français", nameEn: "French", phoneticNotation: "IPA" }),
   defineLanguage({ code: "de", name: "Deutsch", nameEn: "German", phoneticNotation: "IPA" }),
   defineLanguage({ code: "es", name: "Español", nameEn: "Spanish", phoneticNotation: "IPA" }),
@@ -111,7 +81,7 @@ export const SOURCE_LANGUAGES = LANGUAGES.filter((language) => language.isSource
 export const TARGET_LANGUAGES = LANGUAGES.filter((language) => language.isTarget);
 
 /** Codes whose output is some form of Chinese; used to pick Chinese-specific prompts. */
-export const CHINESE_CODES = ["zh-Hans", "zh-Hant", "lzh", "yue", "xdbhw"];
+export const CHINESE_CODES = ["zh-Hans", "zh-Hant", "yue"];
 
 export function isChinese(code: string): boolean {
   return CHINESE_CODES.includes(code);
